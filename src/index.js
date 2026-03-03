@@ -1,77 +1,80 @@
-import { Client, Collection, GatewayIntentBits, Events, REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  Client,
+  Collection,
+  GatewayIntentBits,
+  Events,
+  REST,
+  Routes
+} from "discord.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
-  ]
+  intents: [GatewayIntentBits.Guilds]
 });
 
 client.commands = new Collection();
 
+/* =========================
+   LOAD COMMANDS (ALL FOLDERS)
+========================= */
+
 const commandsPath = path.join(__dirname, "commands");
+const commandFolders = fs.readdirSync(commandsPath);
 
-async function loadCommands(dir) {
-  const files = fs.readdirSync(dir);
+for (const folder of commandFolders) {
+  const folderPath = path.join(commandsPath, folder);
+  const commandFiles = fs
+    .readdirSync(folderPath)
+    .filter(file => file.endsWith(".js"));
 
-  for (const file of files) {
-
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-
-    if (stat.isDirectory()) {
-      await loadCommands(filePath);
-      continue;
-    }
-
-    if (!file.endsWith(".js")) continue;
-
+  for (const file of commandFiles) {
+    const filePath = path.join(folderPath, file);
     const command = await import(`file://${filePath}`);
 
-    if (!command.data || !command.execute) continue;
+    const cmd = command.default ?? command;
 
-    client.commands.set(command.data.name, command);
+    if (cmd.data && cmd.execute) {
+      client.commands.set(cmd.data.name, cmd);
+      console.log(`Loaded command: ${cmd.data.name}`);
+    } else {
+      console.log(`⚠️ Invalid command file: ${file}`);
+    }
   }
 }
 
-await loadCommands(commandsPath);
+/* =========================
+   REGISTER SLASH COMMANDS
+========================= */
+
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 client.once(Events.ClientReady, async () => {
-
   console.log(`Logged in as ${client.user.tag}`);
 
-  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
-
-  const commandsArray = client.commands.map(cmd => cmd.data.toJSON());
+  const commands = client.commands.map(cmd => cmd.data.toJSON());
 
   try {
-
-    console.log("Refreshing slash commands...");
-
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commandsArray }
+      { body: commands }
     );
 
-    console.log("Slash commands registered successfully.");
-
+    console.log("Slash commands registered.");
   } catch (error) {
     console.error(error);
   }
-
 });
 
+/* =========================
+   INTERACTION HANDLER
+========================= */
 
 client.on(Events.InteractionCreate, async interaction => {
-
   if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
@@ -79,83 +82,15 @@ client.on(Events.InteractionCreate, async interaction => {
   if (!command) return;
 
   try {
-
     await command.execute(interaction);
-
   } catch (error) {
-
     console.error(error);
 
     await interaction.reply({
       content: "Error executing command.",
       ephemeral: true
     });
-
   }
-
-});
-
-
-/*
-MESSAGE DELETE LOG
-*/
-
-client.on("messageDelete", async message => {
-
-  if (!message.guild) return;
-  if (!message.content) return;
-
-  const data = JSON.parse(fs.readFileSync("./src/data/modLog.json"));
-
-  const channelId = data[message.guild.id];
-  if (!channelId) return;
-
-  const logChannel = message.guild.channels.cache.get(channelId);
-  if (!logChannel) return;
-
-  logChannel.send(
-`🗑️ Message Deleted
-
-User: ${message.author}
-Channel: ${message.channel}
-
-Content:
-${message.content}`
-  );
-
-});
-
-
-/*
-MESSAGE EDIT LOG
-*/
-
-client.on("messageUpdate", async (oldMessage, newMessage) => {
-
-  if (!oldMessage.guild) return;
-  if (oldMessage.content === newMessage.content) return;
-
-  const data = JSON.parse(fs.readFileSync("./src/data/modLog.json"));
-
-  const channelId = data[oldMessage.guild.id];
-  if (!channelId) return;
-
-  const logChannel = oldMessage.guild.channels.cache.get(channelId);
-  if (!logChannel) return;
-
-  logChannel.send(
-`✏️ Message Edited
-
-User: ${oldMessage.author}
-Channel: ${oldMessage.channel}
-
-Before:
-${oldMessage.content}
-
-After:
-${newMessage.content}`
-  );
-
 });
 
 client.login(process.env.TOKEN);
