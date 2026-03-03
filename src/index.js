@@ -125,5 +125,59 @@ client.on(Events.InteractionCreate, async interaction => {
     });
   }
 });
+client.on("messageDelete", async message => {
 
+if (!message.guild) return;
+if (!message.content) return;
+
+const data = JSON.parse(fs.readFileSync("./src/data/modLog.json"));
+
+const channelId = data[message.guild.id];
+if (!channelId) return;
+
+const logChannel = message.guild.channels.cache.get(channelId);
+if (!logChannel) return;
+
+logChannel.send(
+`🗑️ **Message Deleted**
+
+User: ${message.author}
+Channel: ${message.channel}
+
+Content:
+${message.content}`
+);
+
+});
+
+
+client.on("messageUpdate", async (oldMessage, newMessage) => {
+
+if (!oldMessage.guild) return;
+if (oldMessage.content === newMessage.content) return;
+
+const data = JSON.parse(fs.readFileSync("./src/data/modLog.json"));
+
+const channelId = data[oldMessage.guild.id];
+if (!channelId) return;
+
+const logChannel = oldMessage.guild.channels.cache.get(channelId);
+if (!logChannel) return;
+
+logChannel.send(
+`✏️ **Message Edited**
+
+User: ${oldMessage.author}
+Channel: ${oldMessage.channel}
+
+Before:
+${oldMessage.content}
+
+After:
+${newMessage.content}`
+);
+
+});
+
+client.login(process.env.TOKEN);
 client.login(process.env.TOKEN);
