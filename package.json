@@ -1,0 +1,13 @@
+{
+  "name": "rhc-bot",
+  "version": "1.0.0",
+  "description": "Advanced Discord Bot",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1"
+  }
+}
