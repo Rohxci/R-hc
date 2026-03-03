@@ -1,7 +1,8 @@
-import { Client, GatewayIntentBits, Collection, Events, REST, Routes } from "discord.js";
+import { Client, Collection, GatewayIntentBits, Events, REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getCornerChannel } from "./utils/cornerLogManager.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,68 +18,96 @@ const client = new Client({
 
 client.commands = new Collection();
 
-/* =========================
-   RECURSIVE COMMAND LOADER
-========================= */
+// ============================
+// LOAD COMMANDS
+// ============================
 
 const commandsPath = path.join(__dirname, "commands");
 
-function getCommandFiles(dir) {
-  let results = [];
-  const list = fs.readdirSync(dir);
+function loadCommands(dir) {
+  const files = fs.readdirSync(dir);
 
-  for (const file of list) {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.lstatSync(fullPath);
 
     if (stat.isDirectory()) {
-      results = results.concat(getCommandFiles(filePath));
+      loadCommands(fullPath);
     } else if (file.endsWith(".js")) {
-      results.push(filePath);
+      import(fullPath).then(command => {
+        client.commands.set(command.default.data.name, command.default);
+      });
     }
   }
-
-  return results;
 }
 
-const commandFiles = getCommandFiles(commandsPath);
+loadCommands(commandsPath);
 
-for (const filePath of commandFiles) {
-  const command = (await import(`file://${filePath}`)).default;
-
-  if ("data" in command && "execute" in command) {
-    client.commands.set(command.data.name, command);
-  }
-}
-
-/* =========================
-   AUTO REGISTER SLASH
-========================= */
-
-const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+// ============================
+// READY EVENT
+// ============================
 
 client.once(Events.ClientReady, async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+
+  // Register Slash Commands
+  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+  const commandsArray = client.commands.map(cmd => cmd.data.toJSON());
+
   try {
-    console.log("Refreshing slash commands...");
-
-    const commandsArray = client.commands.map(cmd => cmd.data.toJSON());
-
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commandsArray }
     );
-
-    console.log("Slash commands registered successfully.");
+    console.log("Slash commands registered.");
   } catch (error) {
     console.error(error);
   }
 
-  console.log(`Logged in as ${client.user.tag}`);
+  // ============================
+  // CORNER LOG SYSTEM
+  // ============================
+
+  const uptimeStart = Date.now();
+
+  // Restart message
+  client.guilds.cache.forEach(async (guild) => {
+    const channelId = getCornerChannel(guild.id);
+    if (!channelId) return;
+
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel || !channel.isTextBased()) return;
+
+    channel.send("🔄 Bot Restarted and Online.");
+  });
+
+  // Every 10 minutes
+  setInterval(() => {
+    client.guilds.cache.forEach(async (guild) => {
+      const channelId = getCornerChannel(guild.id);
+      if (!channelId) return;
+
+      const channel = guild.channels.cache.get(channelId);
+      if (!channel || !channel.isTextBased()) return;
+
+      const uptimeMs = Date.now() - uptimeStart;
+      const uptimeMinutes = Math.floor(uptimeMs / 60000);
+      const hours = Math.floor(uptimeMinutes / 60);
+      const minutes = uptimeMinutes % 60;
+
+      const message =
+        `🟢 Bot Status: ONLINE\n` +
+        `⏱ Uptime: ${hours}h ${minutes}m\n` +
+        `🕒 Timestamp: <t:${Math.floor(Date.now() / 1000)}:F>`;
+
+      channel.send(message);
+    });
+  }, 10 * 60 * 1000);
 });
 
-/* =========================
-   INTERACTION HANDLER
-========================= */
+// ============================
+// INTERACTION HANDLER
+// ============================
 
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
