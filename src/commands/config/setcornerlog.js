@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } from "discord.js";
 import { setCornerChannel } from "../../utils/cornerLogManager.js";
 
 export default {
@@ -9,19 +9,13 @@ export default {
       option
         .setName("channel")
         .setDescription("Select the channel")
+        .addChannelTypes(ChannelType.GuildText)
         .setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
-
-    if (!channel.isTextBased()) {
-      return interaction.reply({
-        content: "You must select a text channel.",
-        ephemeral: true
-      });
-    }
 
     setCornerChannel(interaction.guild.id, channel.id);
 
