@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Collection, Events } from "discord.js";
+import { Client, GatewayIntentBits, Collection, Events, REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -17,11 +17,33 @@ const client = new Client({
 
 client.commands = new Collection();
 
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
+/* =========================
+   RECURSIVE COMMAND LOADER
+========================= */
 
-for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
+const commandsPath = path.join(__dirname, "commands");
+
+function getCommandFiles(dir) {
+  let results = [];
+  const list = fs.readdirSync(dir);
+
+  for (const file of list) {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      results = results.concat(getCommandFiles(filePath));
+    } else if (file.endsWith(".js")) {
+      results.push(filePath);
+    }
+  }
+
+  return results;
+}
+
+const commandFiles = getCommandFiles(commandsPath);
+
+for (const filePath of commandFiles) {
   const command = (await import(`file://${filePath}`)).default;
 
   if ("data" in command && "execute" in command) {
@@ -29,32 +51,17 @@ for (const file of commandFiles) {
   }
 }
 
-client.once(Events.ClientReady, () => {
-  console.log(`Logged in as ${client.user.tag}`);
-});
-
-client.on(Events.InteractionCreate, async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({ content: "Error executing command.", ephemeral: true });
-  }
-});
-import { REST, Routes } from "discord.js";
-
-const commandsArray = client.commands.map(command => command.data.toJSON());
+/* =========================
+   AUTO REGISTER SLASH
+========================= */
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 client.once(Events.ClientReady, async () => {
   try {
     console.log("Refreshing slash commands...");
+
+    const commandsArray = client.commands.map(cmd => cmd.data.toJSON());
 
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
@@ -68,4 +75,26 @@ client.once(Events.ClientReady, async () => {
 
   console.log(`Logged in as ${client.user.tag}`);
 });
+
+/* =========================
+   INTERACTION HANDLER
+========================= */
+
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({
+      content: "Error executing command.",
+      ephemeral: true
+    });
+  }
+});
+
 client.login(process.env.TOKEN);
