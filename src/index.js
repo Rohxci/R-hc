@@ -19,66 +19,59 @@ const client = new Client({
 
 client.commands = new Collection();
 
-/* =========================
-   LOAD COMMANDS (ALL FOLDERS)
-========================= */
+/* LOAD COMMANDS */
 
 const commandsPath = path.join(__dirname, "commands");
-const commandFolders = fs.readdirSync(commandsPath);
+
+const commandFolders = fs
+  .readdirSync(commandsPath)
+  .filter(file =>
+    fs.statSync(path.join(commandsPath, file)).isDirectory()
+  );
 
 for (const folder of commandFolders) {
   const folderPath = path.join(commandsPath, folder);
+
   const commandFiles = fs
     .readdirSync(folderPath)
     .filter(file => file.endsWith(".js"));
 
   for (const file of commandFiles) {
     const filePath = path.join(folderPath, file);
-    const command = await import(`file://${filePath}`);
 
+    const command = await import(`file://${filePath}`);
     const cmd = command.default ?? command;
 
     if (cmd.data && cmd.execute) {
       client.commands.set(cmd.data.name, cmd);
-      console.log(`Loaded command: ${cmd.data.name}`);
-    } else {
-      console.log(`⚠️ Invalid command file: ${file}`);
+      console.log(`Loaded ${cmd.data.name}`);
     }
   }
 }
 
-/* =========================
-   REGISTER SLASH COMMANDS
-========================= */
+/* REGISTER COMMANDS */
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 client.once(Events.ClientReady, async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  const commands = client.commands.map(cmd => cmd.data.toJSON());
+  const commands = client.commands.map(c => c.data.toJSON());
 
-  try {
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
+  await rest.put(
+    Routes.applicationCommands(process.env.CLIENT_ID),
+    { body: commands }
+  );
 
-    console.log("Slash commands registered.");
-  } catch (error) {
-    console.error(error);
-  }
+  console.log("Slash commands registered.");
 });
 
-/* =========================
-   INTERACTION HANDLER
-========================= */
+/* INTERACTIONS */
 
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
-
   if (!command) return;
 
   try {
