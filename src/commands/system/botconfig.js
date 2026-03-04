@@ -3,8 +3,8 @@ import fs from "fs";
 import path from "path";
 
 export const data = new SlashCommandBuilder()
- .setName("botconfig")
- .setDescription("Show the bot configuration dashboard");
+ .setName("botstatus")
+ .setDescription("Show bot status and configuration");
 
 export async function execute(interaction) {
 
@@ -43,14 +43,16 @@ export async function execute(interaction) {
   ticketStatus = "✅ Configured";
  }
 
+ const uptime = Math.floor(process.uptime());
+
  const embed = new EmbedBuilder()
   .setColor("#ffffff")
-  .setTitle("⚙️ RÒH Bot Dashboard")
+  .setTitle("📊 RÒH Bot Status")
 
   .addFields(
 
    {
-    name: "🎫 Ticket System Status",
+    name: "🎫 Ticket System",
     value: ticketStatus,
     inline: false
    },
@@ -77,14 +79,21 @@ export async function execute(interaction) {
     name: "🤖 Server Info",
     value:
 `Server: ${interaction.guild.name}
-Members: ${interaction.guild.memberCount}
-Commands: ${interaction.client.commands.size}`,
+Members: ${interaction.guild.memberCount}`,
+    inline: false
+   },
+
+   {
+    name: "⚙️ Bot Info",
+    value:
+`Commands loaded: ${interaction.client.commands.size}
+Uptime: ${uptime} seconds`,
     inline: false
    }
 
   )
 
-  .setFooter({ text: "RÒH Bot Control Panel" })
+  .setFooter({ text: "RÒH Bot Dashboard" })
   .setTimestamp();
 
  await interaction.reply({
