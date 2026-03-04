@@ -163,7 +163,9 @@ async function sendCornerLog(message) {
    READY EVENT
 ======================== */
 
-client.once("ready", () => {
+client.on("ready", () => {
+
+ console.log("Corner log system active");
 
  sendCornerLog(`🟢 Bot started
 Time: ${new Date().toLocaleString()}`);
