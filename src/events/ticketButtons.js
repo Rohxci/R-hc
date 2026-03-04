@@ -22,10 +22,13 @@ export default {
     ephemeral: true
    });
 
-   await interaction.channel.setLocked(true);
+   try {
+    await interaction.channel.setArchived(true);
+   } catch (err) {
+    console.error(err);
+   }
 
    return;
-
   }
 
   /* ========================
@@ -44,7 +47,6 @@ export default {
    }, 2000);
 
    return;
-
   }
 
   /* ========================
@@ -70,6 +72,15 @@ export default {
   }
 
   const ticketChannel = interaction.guild.channels.cache.get(config.ticketChannel);
+
+  if (!ticketChannel) {
+
+   return interaction.reply({
+    content: "❌ Ticket channel not found.",
+    ephemeral: true
+   });
+
+  }
 
   const existing = interaction.guild.channels.cache.find(c =>
    c.name === `ticket-${interaction.user.id}`
@@ -123,15 +134,20 @@ export default {
   );
 
   await thread.send({
+
    content: `Hello ${interaction.user}
 
 Please explain your issue. A staff member will assist you shortly.`,
+
    components: [row]
+
   });
 
   await interaction.reply({
+
    content: `✅ Ticket created: ${thread}`,
    ephemeral: true
+
   });
 
  }
