@@ -56,7 +56,41 @@ for (const folder of folders) {
 }
 
 /* ========================
-   REGISTER COMMANDS
+   CORNER LOG SYSTEM
+======================== */
+
+const cornerLogPath = path.join(__dirname, "data", "cornerLog.json");
+
+async function sendCornerLog(message) {
+
+ try {
+
+  if (!fs.existsSync(cornerLogPath)) return;
+
+  const data = JSON.parse(fs.readFileSync(cornerLogPath));
+
+  for (const guildId in data) {
+
+   const guild = client.guilds.cache.get(guildId);
+   if (!guild) continue;
+
+   const channel = guild.channels.cache.get(data[guildId]);
+   if (!channel) continue;
+
+   await channel.send(message);
+
+  }
+
+ } catch (err) {
+
+  console.error("CornerLog error:", err);
+
+ }
+
+}
+
+/* ========================
+   REGISTER COMMANDS + READY
 ======================== */
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
@@ -82,6 +116,27 @@ client.once(Events.ClientReady, async () => {
   console.error(error);
 
  }
+
+ /* BOT START LOG */
+
+ await sendCornerLog(`🟢 Bot started
+Time: ${new Date().toLocaleString()}`);
+
+ /* STATUS EVERY 10 MINUTES */
+
+ setInterval(() => {
+
+  const latency = client.ws.ping;
+
+  sendCornerLog(
+`📡 Corner Status
+
+Status: 🟢 ONLINE
+Latency: ${latency}ms
+Time: ${new Date().toLocaleString()}`
+  );
+
+ }, 600000);
 
 });
 
@@ -122,99 +177,6 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 
  }
-
-});
-
-/* ========================
-   CORNER LOG SYSTEM
-======================== */
-
-const cornerLogPath = path.join(__dirname, "data", "cornerLog.json");
-
-async function sendCornerLog(message) {
-
- try {
-
-  if (!fs.existsSync(cornerLogPath)) return;
-
-  const data = JSON.parse(fs.readFileSync(cornerLogPath));
-
-  for (const guildId in data) {
-
-   const guild = client.guilds.cache.get(guildId);
-   if (!guild) continue;
-
-   const channel = guild.channels.cache.get(data[guildId]);
-   if (!channel) continue;
-
-   await channel.send(message);
-
-  }
-
- } catch (err) {
-
-  console.error("CornerLog error:", err);
-
- }
-
-}
-
-/* BOT READY */
-
-client.on("ready", async () => {
-
- console.log(`Bot ready as ${client.user.tag}`);
-
- await sendCornerLog(`🟢 Bot started
-Time: ${new Date().toLocaleString()}`);
-
-});
-
-/* STATUS EVERY 10 MINUTES */
-
-setInterval(() => {
-
- const latency = client.ws.ping;
-
- sendCornerLog(
-`📡 Corner Status
-
-Status: 🟢 ONLINE
-Latency: ${latency}ms
-Time: ${new Date().toLocaleString()}`
- );
-
-}, 600000);
-
-/* CRASH LOG */
-
-process.on("uncaughtException", async error => {
-
- console.error(error);
-
- await sendCornerLog(`🔴 Bot crashed
-${error.message}`);
-
-});
-
-/* PROMISE ERROR */
-
-process.on("unhandledRejection", async error => {
-
- console.error(error);
-
- await sendCornerLog(`🔴 Unhandled error
-${error}`);
-
-});
-
-/* SHUTDOWN */
-
-process.on("SIGINT", async () => {
-
- await sendCornerLog(`🟠 Bot shutting down`);
-
- process.exit();
 
 });
 
