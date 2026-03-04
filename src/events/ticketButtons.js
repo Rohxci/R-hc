@@ -11,6 +11,17 @@ export default {
 
   const id = interaction.customId;
 
+  const filePath = path.join("src", "data", "ticketConfig.json");
+
+  let config = null;
+
+  if (fs.existsSync(filePath)) {
+
+   const data = JSON.parse(fs.readFileSync(filePath));
+   config = data[interaction.guild.id];
+
+  }
+
   /* ========================
      CLOSE TICKET
   ======================== */
@@ -22,11 +33,27 @@ export default {
     ephemeral: true
    });
 
+   if (config?.ticketLogs) {
+
+    const logChannel = interaction.guild.channels.cache.get(config.ticketLogs);
+
+    if (logChannel) {
+
+     logChannel.send({
+      content:
+`🔒 **Ticket Closed**
+
+Ticket: ${interaction.channel}
+Closed by: ${interaction.user}`
+     }).catch(() => {});
+
+    }
+
+   }
+
    try {
     await interaction.channel.setArchived(true);
-   } catch (err) {
-    console.error(err);
-   }
+   } catch {}
 
    return;
   }
@@ -42,6 +69,24 @@ export default {
     ephemeral: true
    });
 
+   if (config?.ticketLogs) {
+
+    const logChannel = interaction.guild.channels.cache.get(config.ticketLogs);
+
+    if (logChannel) {
+
+     logChannel.send({
+      content:
+`🗑 **Ticket Deleted**
+
+Ticket: ${interaction.channel}
+Deleted by: ${interaction.user}`
+     }).catch(() => {});
+
+    }
+
+   }
+
    setTimeout(() => {
     interaction.channel.delete().catch(() => {});
    }, 2000);
@@ -54,13 +99,6 @@ export default {
   ======================== */
 
   if (!id.startsWith("ticket_")) return;
-
-  const filePath = path.join("src", "data", "ticketConfig.json");
-
-  if (!fs.existsSync(filePath)) return;
-
-  const data = JSON.parse(fs.readFileSync(filePath));
-  const config = data[interaction.guild.id];
 
   if (!config || !config.ticketChannel) {
 
@@ -101,8 +139,7 @@ export default {
 
   const thread = await ticketChannel.threads.create({
    name: `ticket-${interaction.user.id}`,
-   type: ChannelType.PrivateThread,
-   invitable: false
+   type: ChannelType.PublicThread
   });
 
   await thread.members.add(interaction.user.id);
@@ -157,6 +194,31 @@ Please explain your issue. A staff member will assist you shortly.`,
    ephemeral: true
 
   });
+
+  /* ========================
+     TICKET LOG
+  ======================== */
+
+  if (config.ticketLogs) {
+
+   const logChannel = interaction.guild.channels.cache.get(config.ticketLogs);
+
+   if (logChannel) {
+
+    logChannel.send({
+
+     content:
+`🎫 **Ticket Created**
+
+User: ${interaction.user}
+Ticket: ${thread}
+User ID: ${interaction.user.id}`
+
+    }).catch(() => {});
+
+   }
+
+  }
 
  }
 };
