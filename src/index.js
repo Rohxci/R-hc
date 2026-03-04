@@ -20,22 +20,18 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-/* ========================
-   LOAD COMMANDS
-======================== */
+/* LOAD COMMANDS */
 
 const commandsPath = path.join(__dirname, "commands");
 
-const folders = fs
- .readdirSync(commandsPath)
+const folders = fs.readdirSync(commandsPath)
  .filter(f => fs.statSync(path.join(commandsPath, f)).isDirectory());
 
 for (const folder of folders) {
 
  const folderPath = path.join(commandsPath, folder);
 
- const files = fs
-  .readdirSync(folderPath)
+ const files = fs.readdirSync(folderPath)
   .filter(file => file.endsWith(".js"));
 
  for (const file of files) {
@@ -50,14 +46,11 @@ for (const folder of folders) {
   client.commands.set(command.data.name, command);
   commands.push(command.data.toJSON());
 
-  console.log(`Loaded command: ${command.data.name}`);
  }
 
 }
 
-/* ========================
-   CORNER LOG SYSTEM
-======================== */
+/* CORNER LOG */
 
 const cornerLogPath = path.join(__dirname, "data", "cornerLog.json");
 
@@ -89,9 +82,7 @@ async function sendCornerLog(message) {
 
 }
 
-/* ========================
-   REGISTER COMMANDS + READY
-======================== */
+/* READY */
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
@@ -109,20 +100,22 @@ client.once(Events.ClientReady, async () => {
    { body: commands }
   );
 
-  console.log("Slash commands registered.");
-
  } catch (error) {
 
   console.error(error);
 
  }
 
- /* BOT START LOG */
+ /* WAIT 5 SECONDS (important for Railway) */
 
- await sendCornerLog(`🟢 Bot started
+ setTimeout(() => {
+
+  sendCornerLog(`🟢 Bot started
 Time: ${new Date().toLocaleString()}`);
 
- /* STATUS EVERY 10 MINUTES */
+ }, 5000);
+
+ /* STATUS LOOP */
 
  setInterval(() => {
 
@@ -140,16 +133,13 @@ Time: ${new Date().toLocaleString()}`
 
 });
 
-/* ========================
-   INTERACTION HANDLER
-======================== */
+/* INTERACTIONS */
 
 client.on(Events.InteractionCreate, async interaction => {
 
  if (!interaction.isChatInputCommand()) return;
 
  const command = client.commands.get(interaction.commandName);
-
  if (!command) return;
 
  try {
@@ -160,28 +150,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
   console.error(error);
 
-  if (interaction.replied || interaction.deferred) {
-
-   await interaction.followUp({
-    content: "Error executing command.",
-    ephemeral: true
-   });
-
-  } else {
-
-   await interaction.reply({
-    content: "Error executing command.",
-    ephemeral: true
-   });
-
-  }
-
  }
 
 });
-
-/* ========================
-   LOGIN
-======================== */
 
 client.login(process.env.TOKEN);
