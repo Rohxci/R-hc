@@ -1,30 +1,36 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } from "discord.js";
-import { setCornerChannel } from "../../utils/cornerLogManager.js";
+import { SlashCommandBuilder } from "discord.js";
+import fs from "fs";
+import path from "path";
 
-export default {
-  data: new SlashCommandBuilder()
-    .setName("setcornerlog")
-    .setDescription("Set the channel where the bot will send status logs")
-    .addChannelOption(option =>
-      option
-        .setName("channel")
-        .setDescription("Select the channel")
-        .addChannelTypes(ChannelType.GuildText)
-        .setRequired(true)
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+export const data = new SlashCommandBuilder()
+ .setName("setcornerlog")
+ .setDescription("Set the corner log channel")
+ .addChannelOption(option =>
+  option
+   .setName("channel")
+   .setDescription("Channel for corner logs")
+   .setRequired(true)
+ );
 
-  async execute(interaction) {
-    const channel = interaction.options.getChannel("channel");
+export async function execute(interaction) {
 
-    setCornerChannel(interaction.guild.id, channel.id);
+ const channel = interaction.options.getChannel("channel");
 
-    const embed = new EmbedBuilder()
-      .setColor(0x00ffcc)
-      .setTitle("📡 Corner Log Channel Set")
-      .setDescription(`Corner logs will now be sent in ${channel}.`)
-      .setTimestamp();
+ const filePath = path.join("src", "data", "cornerLog.json");
 
-    await interaction.reply({ embeds: [embed] });
-  }
-};
+ let data = {};
+
+ if (fs.existsSync(filePath)) {
+  data = JSON.parse(fs.readFileSync(filePath));
+ }
+
+ data[interaction.guild.id] = channel.id;
+
+ fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+
+ await interaction.reply({
+  content: `Corner log set to ${channel}`,
+  ephemeral: true
+ });
+
+}
