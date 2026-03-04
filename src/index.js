@@ -180,7 +180,7 @@ Latency: ${latency}ms
 Time: ${new Date().toLocaleString()}`
   );
 
- }, 10000);
+ }, 600000);
 
 });
 
