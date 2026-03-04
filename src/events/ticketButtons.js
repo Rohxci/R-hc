@@ -139,7 +139,8 @@ Deleted by: ${interaction.user}`
 
   const thread = await ticketChannel.threads.create({
    name: `ticket-${interaction.user.id}`,
-   type: ChannelType.PublicThread
+   type: ChannelType.PrivateThread,
+   invitable: false
   });
 
   await thread.members.add(interaction.user.id);
