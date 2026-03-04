@@ -39,6 +39,15 @@ export async function execute(interaction) {
     inline: false
    },
    {
+    name: "🎫 Ticket System",
+    value:
+`/setticketchannel
+/setticketstaff
+/setticketlogs
+/setticketpanel`,
+    inline: false
+   },
+   {
     name: "⚙️ Configuration",
     value:
 `/setmodlog`,
