@@ -125,4 +125,86 @@ client.on(Events.InteractionCreate, async interaction => {
 
 });
 
+/* ========================
+   CORNER LOG SYSTEM
+======================== */
+
+async function sendCornerLog(message) {
+
+ try {
+
+  const data = JSON.parse(fs.readFileSync("./src/data/cornerLog.json"));
+
+  for (const guildId in data) {
+
+   const guild = client.guilds.cache.get(guildId);
+   if (!guild) continue;
+
+   const channel = guild.channels.cache.get(data[guildId]);
+   if (!channel) continue;
+
+   await channel.send(message);
+
+  }
+
+ } catch (err) {
+  console.error("CornerLog error:", err);
+ }
+
+}
+
+/* BOT START */
+
+client.once("ready", () => {
+
+ sendCornerLog(`🟢 Bot started
+Time: ${new Date().toLocaleString()}`);
+
+});
+
+/* STATUS EVERY 10 MINUTES */
+
+setInterval(() => {
+
+ const latency = client.ws.ping;
+
+ sendCornerLog(
+`📡 Corner Status
+
+Status: 🟢 ONLINE
+Latency: ${latency}ms
+Time: ${new Date().toLocaleString()}`
+ );
+
+}, 600000);
+
+/* CRASH LOG */
+
+process.on("uncaughtException", error => {
+
+ sendCornerLog(`🔴 Bot crashed
+${error.message}`);
+
+ console.error(error);
+
+});
+
+process.on("unhandledRejection", error => {
+
+ sendCornerLog(`🔴 Unhandled error
+${error}`);
+
+ console.error(error);
+
+});
+
+/* BOT SHUTDOWN */
+
+process.on("exit", code => {
+
+ sendCornerLog(`🟠 Bot shutting down
+Code: ${code}`);
+
+});
+
 client.login(process.env.TOKEN);
