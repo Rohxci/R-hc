@@ -1,75 +1,79 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
-export const data = new SlashCommandBuilder()
- .setName("help")
- .setDescription("Show all bot commands");
+export default {
 
-export async function execute(interaction) {
+ data: new SlashCommandBuilder()
+  .setName("help")
+  .setDescription("Shows all bot commands"),
 
- const embed = new EmbedBuilder()
-  .setColor("#ffffff")
-  .setTitle("RÒH Bot Commands")
+ async execute(interaction) {
 
-  .addFields(
-   {
-    name: "🛡️ Moderation",
-    value:
-`/ban
-/kick
-/timeout
-/warn
-/warnings
-/clearwarnings
-/clear
-/slowmode
-/lock
-/unlock
-/role`,
-    inline: false
-   },
-   {
-    name: "👮 Staff Management",
-    value:
-`/hire
-/fire
-/promote
-/demote
-/staff
-/setstaffroles`,
-    inline: false
-   },
-   {
-    name: "🎫 Ticket System",
-    value:
-`/setticketchannel
-/setticketstaff
-/setticketlogs
-/setticketpanel`,
-    inline: false
-   },
-   {
-    name: "⚙️ Configuration",
-    value:
-`/setmodlog`,
-    inline: false
-   },
-   {
-    name: "🔧 Utility",
-    value:
-`/ping
-/userinfo
-/avatar
-/serverinfo
-/botinfo
-/announce
-/help`,
-    inline: false
-   }
-  )
+  const embed = new EmbedBuilder()
 
-  .setFooter({ text: "RÒH Bot" })
-  .setTimestamp();
+   .setTitle("⚙️ RÒH Bot Commands")
 
- await interaction.reply({ embeds: [embed] });
+   .setColor("#f47fff")
 
-}
+   .addFields(
+
+    {
+     name: "🛡️ Moderation",
+     value:
+`/ban — Ban a user
+/kick — Kick a user
+/warn — Warn a user
+/warnings — Show user warnings
+/clearwarnings — Remove warnings
+/clear — Delete messages
+/timeout — Timeout a user
+/slowmode — Set channel slowmode
+/lock — Lock a channel
+/unlock — Unlock a channel`
+    },
+
+    {
+     name: "👮 Staff Management",
+     value:
+`/hire — Add staff member
+/fire — Remove staff member
+/promote — Promote staff
+/demote — Demote staff
+/staff — Show staff list
+/setstaffroles — Configure staff roles`
+    },
+
+    {
+     name: "🎫 Ticket System",
+     value:
+`/ticketpanel — Create ticket panel
+/setticketchannel — Set ticket channel
+/setticketlog — Set ticket log
+/setticketstaff — Set ticket staff roles
+/add — Add user to ticket
+/remove — Remove user from ticket
+/ticketlist — Show open tickets
+/clearalltickets — Delete all tickets`
+    },
+
+    {
+     name: "📢 Utility",
+     value:
+`/announce — Send announcement
+/userinfo — Show user info
+/role — Manage roles`
+    }
+
+   )
+
+   .setFooter({
+    text: "RÒH Bot • Moderation & Ticket System"
+   });
+
+  await interaction.reply({
+   embeds: [embed],
+   ephemeral: true
+  });
+
+ }
+
+};
