@@ -18,7 +18,6 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-
 const commands = [];
 
 /* ========================
@@ -53,6 +52,7 @@ for (const folder of folders) {
 
   console.log(`Loaded command: ${command.data.name}`);
  }
+
 }
 
 /* ========================
@@ -129,11 +129,15 @@ client.on(Events.InteractionCreate, async interaction => {
    CORNER LOG SYSTEM
 ======================== */
 
+const cornerLogPath = path.join(__dirname, "data", "cornerLog.json");
+
 async function sendCornerLog(message) {
 
  try {
 
-  const data = JSON.parse(fs.readFileSync("./src/data/cornerLog.json"));
+  if (!fs.existsSync(cornerLogPath)) return;
+
+  const data = JSON.parse(fs.readFileSync(cornerLogPath));
 
   for (const guildId in data) {
 
@@ -148,57 +152,59 @@ async function sendCornerLog(message) {
   }
 
  } catch (err) {
+
   console.error("CornerLog error:", err);
+
  }
 
 }
 
-/* BOT START */
+/* ========================
+   READY EVENT
+======================== */
 
 client.once("ready", () => {
 
  sendCornerLog(`🟢 Bot started
 Time: ${new Date().toLocaleString()}`);
 
-});
+ setInterval(() => {
 
-/* STATUS EVERY 10 MINUTES */
+  const latency = client.ws.ping;
 
-setInterval(() => {
-
- const latency = client.ws.ping;
-
- sendCornerLog(
+  sendCornerLog(
 `📡 Corner Status
 
 Status: 🟢 ONLINE
 Latency: ${latency}ms
 Time: ${new Date().toLocaleString()}`
- );
+  );
 
-}, 600000);
+ }, 10000);
 
-/* CRASH LOG */
+});
+
+/* ========================
+   ERROR LOGS
+======================== */
 
 process.on("uncaughtException", error => {
 
+ console.error(error);
+
  sendCornerLog(`🔴 Bot crashed
 ${error.message}`);
-
- console.error(error);
 
 });
 
 process.on("unhandledRejection", error => {
 
+ console.error(error);
+
  sendCornerLog(`🔴 Unhandled error
 ${error}`);
 
- console.error(error);
-
 });
-
-/* BOT SHUTDOWN */
 
 process.on("exit", code => {
 
@@ -206,5 +212,9 @@ process.on("exit", code => {
 Code: ${code}`);
 
 });
+
+/* ========================
+   LOGIN
+======================== */
 
 client.login(process.env.TOKEN);
