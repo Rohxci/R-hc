@@ -82,6 +82,8 @@ export default {
 
   }
 
+  /* CHECK EXISTING TICKET */
+
   const existing = interaction.guild.channels.cache.find(c =>
    c.name === `ticket-${interaction.user.id}`
   );
@@ -95,13 +97,17 @@ export default {
 
   }
 
+  /* CREATE THREAD */
+
   const thread = await ticketChannel.threads.create({
-   name: `ticket-${interaction.user.username}`,
+   name: `ticket-${interaction.user.id}`,
    type: ChannelType.PrivateThread,
    invitable: false
   });
 
   await thread.members.add(interaction.user.id);
+
+  /* ADD STAFF */
 
   if (config.staffRoles) {
 
@@ -118,6 +124,8 @@ export default {
    }
 
   }
+
+  /* BUTTONS */
 
   const row = new ActionRowBuilder().addComponents(
 
