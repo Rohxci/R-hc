@@ -159,59 +159,62 @@ async function sendCornerLog(message) {
 
 }
 
-/* ========================
-   READY EVENT
-======================== */
+/* BOT READY */
 
-client.on("ready", () => {
+client.on("ready", async () => {
 
- console.log("Corner log system active");
+ console.log(`Bot ready as ${client.user.tag}`);
 
- sendCornerLog(`🟢 Bot started
+ await sendCornerLog(`🟢 Bot started
 Time: ${new Date().toLocaleString()}`);
 
- setInterval(() => {
+});
 
-  const latency = client.ws.ping;
+/* STATUS EVERY 10 MINUTES */
 
-  sendCornerLog(
+setInterval(() => {
+
+ const latency = client.ws.ping;
+
+ sendCornerLog(
 `📡 Corner Status
 
 Status: 🟢 ONLINE
 Latency: ${latency}ms
 Time: ${new Date().toLocaleString()}`
-  );
+ );
 
- }, 600000);
+}, 600000);
 
-});
+/* CRASH LOG */
 
-/* ========================
-   ERROR LOGS
-======================== */
-
-process.on("uncaughtException", error => {
+process.on("uncaughtException", async error => {
 
  console.error(error);
 
- sendCornerLog(`🔴 Bot crashed
+ await sendCornerLog(`🔴 Bot crashed
 ${error.message}`);
 
 });
 
-process.on("unhandledRejection", error => {
+/* PROMISE ERROR */
+
+process.on("unhandledRejection", async error => {
 
  console.error(error);
 
- sendCornerLog(`🔴 Unhandled error
+ await sendCornerLog(`🔴 Unhandled error
 ${error}`);
 
 });
 
-process.on("exit", code => {
+/* SHUTDOWN */
 
- sendCornerLog(`🟠 Bot shutting down
-Code: ${code}`);
+process.on("SIGINT", async () => {
+
+ await sendCornerLog(`🟠 Bot shutting down`);
+
+ process.exit();
 
 });
 
