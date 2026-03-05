@@ -5,11 +5,17 @@ export default {
 
  data: new SlashCommandBuilder()
   .setName("staff")
-  .setDescription("Show the staff list"),
+  .setDescription("Show the staff team"),
 
  async execute(interaction) {
 
-  const config = JSON.parse(fs.readFileSync("src/data/staffConfig.json"));
+  const config = JSON.parse(
+   fs.readFileSync("src/data/staffConfig.json")
+  );
+
+  if (!config.hierarchy || config.hierarchy.length === 0) {
+   return interaction.reply("Staff hierarchy not configured.");
+  }
 
   const embed = new EmbedBuilder()
    .setTitle("Staff Team")
@@ -23,19 +29,11 @@ export default {
 
    const members = role.members.map(m => `<@${m.id}>`);
 
-   if (members.length === 0) continue;
-
    embed.addFields({
     name: role.name,
-    value: members.join("\n"),
+    value: members.length > 0 ? members.join("\n") : "No members",
     inline: false
    });
-
-  }
-
-  if (embed.data.fields?.length === 0) {
-
-   embed.setDescription("No staff members found.");
 
   }
 
