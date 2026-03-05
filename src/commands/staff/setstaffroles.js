@@ -1,56 +1,42 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
-import { setStaffRoles } from "../../utils/staffManager.js";
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import fs from "fs";
+
+const file = "src/data/staffConfig.json";
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("setstaffroles")
-    .setDescription("Set staff hierarchy (lowest → highest)")
-    .addStringOption(option =>
-      option
-        .setName("roles")
-        .setDescription("Mention roles in order separated by space (lowest → highest)")
-        .setRequired(true)
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+ data: new SlashCommandBuilder()
+  .setName("setstaffroles")
+  .setDescription("Set staff role and hierarchy")
+  .addRoleOption(o => o.setName("staffrole").setDescription("Main staff role").setRequired(true))
+  .addRoleOption(o => o.setName("role1").setDescription("Highest role").setRequired(true))
+  .addRoleOption(o => o.setName("role2").setDescription("Role").setRequired(true))
+  .addRoleOption(o => o.setName("role3").setDescription("Role"))
+  .addRoleOption(o => o.setName("role4").setDescription("Role"))
+  .addRoleOption(o => o.setName("role5").setDescription("Role"))
+  .addRoleOption(o => o.setName("role6").setDescription("Lowest role"))
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-  async execute(interaction) {
+ async execute(interaction) {
 
-    const input = interaction.options.getString("roles");
+  const staffRole = interaction.options.getRole("staffrole");
 
-    // Extract role IDs from mentions
-    const roleIds = [...input.matchAll(/<@&(\d+)>/g)].map(match => match[1]);
+  const roles = [
+   interaction.options.getRole("role1"),
+   interaction.options.getRole("role2"),
+   interaction.options.getRole("role3"),
+   interaction.options.getRole("role4"),
+   interaction.options.getRole("role5"),
+   interaction.options.getRole("role6")
+  ].filter(Boolean);
 
-    if (roleIds.length < 2) {
-      return interaction.reply({
-        content: "You must mention at least 2 roles in order.",
-        ephemeral: true
-      });
-    }
+  const config = {
+   staffRole: staffRole.id,
+   hierarchy: roles.map(r => r.id)
+  };
 
-    // Validate roles exist in guild
-    const validRoles = roleIds.filter(id => interaction.guild.roles.cache.has(id));
+  fs.writeFileSync(file, JSON.stringify(config, null, 2));
 
-    if (validRoles.length !== roleIds.length) {
-      return interaction.reply({
-        content: "One or more mentioned roles are invalid.",
-        ephemeral: true
-      });
-    }
+  await interaction.reply("Staff roles configured.");
 
-    setStaffRoles(interaction.guild.id, validRoles);
-
-    const embed = new EmbedBuilder()
-      .setColor(0x00ffff)
-      .setTitle("✅ Staff Hierarchy Configured")
-      .setDescription(
-        `Hierarchy saved successfully.\n\n` +
-        `Order (Lowest → Highest):\n` +
-        validRoles
-          .map(id => `<@&${id}>`)
-          .join(" → ")
-      )
-      .setTimestamp();
-
-    await interaction.reply({ embeds: [embed] });
-  }
+ }
 };
