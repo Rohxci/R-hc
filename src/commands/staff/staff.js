@@ -1,35 +1,46 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { getStaffRoles } from "../../utils/staffManager.js";
+import fs from "fs";
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("staff")
-    .setDescription("Show all staff members"),
 
-  async execute(interaction) {
-    const roles = getStaffRoles(interaction.guild.id);
+ data: new SlashCommandBuilder()
+  .setName("staff")
+  .setDescription("Show the staff list"),
 
-    if (!roles)
-      return interaction.reply({ content: "Staff hierarchy not configured.", ephemeral: true });
+ async execute(interaction) {
 
-    const embed = new EmbedBuilder()
-      .setColor(0x9966ff)
-      .setTitle("👥 Staff Members")
-      .setTimestamp();
+  const config = JSON.parse(fs.readFileSync("src/data/staffConfig.json"));
 
-    for (const roleId of roles) {
-      const role = interaction.guild.roles.cache.get(roleId);
-      if (!role) continue;
+  const embed = new EmbedBuilder()
+   .setTitle("Staff Team")
+   .setColor("Blue");
 
-      const members = role.members.map(m => m.user.tag).join("\n") || "None";
+  for (const roleId of config.hierarchy) {
 
-      embed.addFields({
-        name: role.name,
-        value: members,
-        inline: false
-      });
-    }
+   const role = interaction.guild.roles.cache.get(roleId);
 
-    await interaction.reply({ embeds: [embed] });
+   if (!role) continue;
+
+   const members = role.members.map(m => `<@${m.id}>`);
+
+   if (members.length === 0) continue;
+
+   embed.addFields({
+    name: role.name,
+    value: members.join("\n"),
+    inline: false
+   });
+
   }
+
+  if (embed.data.fields?.length === 0) {
+
+   embed.setDescription("No staff members found.");
+
+  }
+
+  await interaction.reply({ embeds: [embed] });
+
+ }
+
 };
