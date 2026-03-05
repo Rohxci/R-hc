@@ -1,33 +1,34 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
-import { getStaffRoles } from "../../utils/staffManager.js";
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import fs from "fs";
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("fire")
-    .setDescription("Remove all staff roles from a user")
-    .addUserOption(o =>
-      o.setName("user").setDescription("User").setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+ data: new SlashCommandBuilder()
+  .setName("fire")
+  .setDescription("Remove staff member")
+  .addUserOption(o =>
+   o.setName("user").setDescription("User").setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
-  async execute(interaction) {
-    const member = interaction.options.getMember("user");
-    const roles = getStaffRoles(interaction.guild.id);
+ async execute(interaction) {
 
-    if (!roles)
-      return interaction.reply({ content: "Staff hierarchy not configured.", ephemeral: true });
+  const member = interaction.options.getMember("user");
 
-    for (const roleId of roles) {
-      if (member.roles.cache.has(roleId)) {
-        await member.roles.remove(roleId);
-      }
-    }
+  const config = JSON.parse(fs.readFileSync("src/data/staffConfig.json"));
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff0000)
-      .setTitle("🔴 Staff Removed")
-      .setDescription(`${member.user.tag} is no longer staff.`)
-      .setTimestamp();
+  const roles = [config.staffRole, ...config.hierarchy];
 
-    await interaction.reply({ embeds: [embed] });
+  for (const id of roles) {
+
+   const role = interaction.guild.roles.cache.get(id);
+
+   if (role && member.roles.cache.has(id)) {
+    await member.roles.remove(role);
+   }
+
   }
+
+  await interaction.reply(`${member} removed from staff`);
+
+ }
 };
