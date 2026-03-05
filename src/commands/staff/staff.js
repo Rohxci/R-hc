@@ -21,14 +21,12 @@ export default {
    .setTitle("Staff Team")
    .setColor("Blue");
 
-  for (let i = 0; i < config.hierarchy.length; i++) {
+  for (const roleId of config.hierarchy) {
 
-   const roleId = config.hierarchy[i];
    const role = interaction.guild.roles.cache.get(roleId);
-
    if (!role) continue;
 
-   const members = role.members.map(member => `<@${member.id}>`);
+   const members = role.members.map(m => `<@${m.id}>`);
 
    embed.addFields({
     name: role.name,
