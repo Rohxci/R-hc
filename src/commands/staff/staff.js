@@ -27,11 +27,13 @@ export default {
 
    if (!role) continue;
 
-   const members = role.members.map(m => `<@${m.id}>`);
+   const members = role.members
+    .map(member => `<@${member.id}>`)
+    .join("\n");
 
    embed.addFields({
     name: role.name,
-    value: members.length > 0 ? members.join("\n") : "No members",
+    value: members || "No members",
     inline: false
    });
 
