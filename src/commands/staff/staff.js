@@ -13,24 +13,38 @@ export default {
    fs.readFileSync("src/data/staffConfig.json")
   );
 
-  if (!config.hierarchy) {
-   return interaction.reply("Staff hierarchy not configured.");
-  }
-
   const embed = new EmbedBuilder()
    .setTitle("Staff Team")
    .setColor("Blue");
 
-  for (const roleId of config.hierarchy) {
+  const guildMembers = await interaction.guild.members.fetch();
 
+  for (let i = 0; i < config.hierarchy.length; i++) {
+
+   const roleId = config.hierarchy[i];
    const role = interaction.guild.roles.cache.get(roleId);
+
    if (!role) continue;
 
-   const members = role.members.map(m => `<@${m.id}>`);
+   const members = guildMembers.filter(member => {
+
+    if (!member.roles.cache.has(roleId)) return false;
+
+    for (let j = 0; j < i; j++) {
+     if (member.roles.cache.has(config.hierarchy[j])) {
+      return false;
+     }
+    }
+
+    return true;
+
+   });
+
+   const list = members.map(m => `<@${m.id}>`).join("\n");
 
    embed.addFields({
     name: role.name,
-    value: members.length ? members.join("\n") : "No members",
+    value: list || "No members",
     inline: false
    });
 
