@@ -9,6 +9,8 @@ export default {
 
  async execute(interaction) {
 
+  await interaction.deferReply();
+
   const config = JSON.parse(
    fs.readFileSync("src/data/staffConfig.json")
   );
@@ -50,7 +52,7 @@ export default {
 
   }
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed] });
 
  }
 
