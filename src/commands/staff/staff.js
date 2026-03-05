@@ -13,7 +13,7 @@ export default {
    fs.readFileSync("src/data/staffConfig.json")
   );
 
-  if (!config.hierarchy || config.hierarchy.length === 0) {
+  if (!config.hierarchy) {
    return interaction.reply("Staff hierarchy not configured.");
   }
 
