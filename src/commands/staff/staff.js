@@ -9,50 +9,34 @@ export default {
 
  async execute(interaction) {
 
-  await interaction.deferReply();
-
   const config = JSON.parse(
    fs.readFileSync("src/data/staffConfig.json")
   );
+
+  if (!config.hierarchy || config.hierarchy.length === 0) {
+   return interaction.reply("Staff hierarchy not configured.");
+  }
 
   const embed = new EmbedBuilder()
    .setTitle("Staff Team")
    .setColor("Blue");
 
-  const guildMembers = await interaction.guild.members.fetch();
+  for (const roleId of config.hierarchy) {
 
-  for (let i = 0; i < config.hierarchy.length; i++) {
-
-   const roleId = config.hierarchy[i];
    const role = interaction.guild.roles.cache.get(roleId);
-
    if (!role) continue;
 
-   const members = guildMembers.filter(member => {
-
-    if (!member.roles.cache.has(roleId)) return false;
-
-    for (let j = 0; j < i; j++) {
-     if (member.roles.cache.has(config.hierarchy[j])) {
-      return false;
-     }
-    }
-
-    return true;
-
-   });
-
-   const list = members.map(m => `<@${m.id}>`).join("\n");
+   const members = role.members.map(m => `<@${m.id}>`);
 
    embed.addFields({
     name: role.name,
-    value: list || "No members",
+    value: members.length ? members.join("\n") : "No members",
     inline: false
    });
 
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.reply({ embeds: [embed] });
 
  }
 
