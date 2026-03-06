@@ -14,7 +14,7 @@ export default {
   );
 
   if (!config.hierarchy || config.hierarchy.length === 0) {
-   return interaction.reply("Staff hierarchy not configured.");
+   return interaction.reply("Staff roles not configured.");
   }
 
   const embed = new EmbedBuilder()
@@ -26,7 +26,9 @@ export default {
    const role = interaction.guild.roles.cache.get(roleId);
    if (!role) continue;
 
-   const members = role.members.map(m => `<@${m.id}>`);
+   const members = role.members
+    .filter(member => member.roles.cache.has(roleId))
+    .map(member => `<@${member.id}>`);
 
    embed.addFields({
     name: role.name,
