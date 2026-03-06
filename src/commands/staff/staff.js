@@ -17,43 +17,21 @@ export default {
    return interaction.reply("Staff roles not configured.");
   }
 
-  const guild = interaction.guild;
-  const members = await guild.members.fetch();
-
   const embed = new EmbedBuilder()
    .setTitle("Staff Team")
    .setColor("Blue");
 
-  for (let i = 0; i < config.hierarchy.length; i++) {
+  for (const roleId of config.hierarchy) {
 
-   const roleId = config.hierarchy[i];
-   const role = guild.roles.cache.get(roleId);
-
+   const role = interaction.guild.roles.cache.get(roleId);
    if (!role) continue;
 
-   const list = [];
-
-   members.forEach(member => {
-
-    if (!member.roles.cache.has(config.staffRole)) return;
-
-    const staffRoles = config.hierarchy.filter(r =>
-     member.roles.cache.has(r)
-    );
-
-    if (staffRoles.length === 0) return;
-
-    const highest = staffRoles[0];
-
-    if (highest === roleId) {
-     list.push(`<@${member.id}>`);
-    }
-
-   });
+   const members = role.members
+    .map(member => `<@${member.id}>`);
 
    embed.addFields({
     name: role.name,
-    value: list.length ? list.join("\n") : "No members",
+    value: members.length ? members.join("\n") : "No members",
     inline: false
    });
 
